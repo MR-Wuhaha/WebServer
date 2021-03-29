@@ -10,11 +10,11 @@ int Httpdata::handle_event()
 {
     if(Revent & EPOLLIN)
     {
-        int flag = read(shared_from_this(),buff,length);
-        if(flag == 1)
+        HandleRead();
+        if(accept_epoll == nullptr)
         {
             //cout<<"recv data from client: "<<fd<<" "<<buff<<endl;
-            handle_http(buff);
+            handle_http(read_buff);
             SeparateTimer();
             if(time_round != nullptr && Keep_Alive)
             {
@@ -24,6 +24,10 @@ int Httpdata::handle_event()
                 time_round->AddTimeRoundItemNode(sp_time_round_item_node);
             }
         }
+    }
+    else if(Revent & EPOLLOUT)
+    {
+        HandleWrite();
     }
     Revent = 0;
     return 0;
@@ -99,17 +103,16 @@ void Httpdata::handle_http(char *buff)
 
     }
     delete Recv_Http;
-    char send_word[4096];
-    sprintf(send_word, "%s", head.c_str());
-    write(shared_from_this(),send_word,strlen(send_word));
-    sprintf(send_word, "%s", body.c_str());
-    write(shared_from_this(),send_word,strlen(send_word));
+    string send_str = head + body;
+    sprintf(write_buff, "%s", send_str.c_str());
+    write_length = send_str.length();
+    HandleWrite();
 }
 
 void Httpdata::handle_request_line(char* buff,int& index,Http_Handle* Recv_Http)
 {
     string temp = "";
-    while(index <= strlen(buff) && buff[index] != ' ')
+    while(index < read_length && buff[index] != ' ')
     {
         temp += buff[index];
         index++;
@@ -117,7 +120,7 @@ void Httpdata::handle_request_line(char* buff,int& index,Http_Handle* Recv_Http)
     Recv_Http->Req = temp;
     index++;
     temp  = "";
-    while(index <= strlen(buff) && buff[index] != ' ')
+    while(index < read_length && buff[index] != ' ')
     {
         temp += buff[index];
         index++;
@@ -125,7 +128,7 @@ void Httpdata::handle_request_line(char* buff,int& index,Http_Handle* Recv_Http)
     Recv_Http->URI = temp;
     index++;
     temp = "";
-    while(index <= strlen(buff) && buff[index] != '\r' && buff[index] != '\n')
+    while(index < read_length && buff[index] != '\r' && buff[index] != '\n')
     {
         temp += buff[index];
         index++;
@@ -138,17 +141,17 @@ void Httpdata::handle_request_line(char* buff,int& index,Http_Handle* Recv_Http)
 
 void Httpdata::handle_request_head(char* buff,int &index,Http_Handle* Recv_Http)
 {
-    while(index <= strlen(buff) && buff[index] != '\r' && buff[index] != '\n')
+    while(index < read_length && buff[index] != '\r' && buff[index] != '\n')
     {
         string key = "";
         string value = "";
-        while(index <= strlen(buff) && buff[index] != ':')
+        while(index < read_length && buff[index] != ':')
         {
             key += buff[index];
             index++;
         }
         index = index+2;
-        while(index <= strlen(buff) && buff[index] != '\r' && buff[index] != '\n')
+        while(index < read_length && buff[index] != '\r' && buff[index] != '\n')
         {
             value += buff[index];
             index++;
