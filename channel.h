@@ -23,7 +23,11 @@ class channel:public enable_shared_from_this<channel>
         Handle write;
         Epoll *accept_epoll;
         Epoll *attach_epoll;
-        char* buff;
+        char* read_buff;
+        char* write_buff;
+        int read_length;
+        int write_length;
+        int max_read_write_buff_length;
         int length;
         TimeRound<channel>* time_round;
         std::weak_ptr<TimeRoundItem<channel>> wp_time_round_item;
@@ -34,6 +38,8 @@ class channel:public enable_shared_from_this<channel>
         virtual ~channel();
         virtual int handle_event();
         virtual int handle_close();
+        virtual void HandleRead();
+        virtual void HandleWrite();
         bool Get_KeepAlive_State();
         void Close();
         friend int Maccept(SP_channel _channel,char *buff,int length);
