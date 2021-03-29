@@ -2,10 +2,13 @@
 #include"Epoll.h"
 using namespace std;
 channel::channel(int _fd,uint32_t _Sevent,Handle _read,Handle _write,TimeRound<channel>* _time_round):
-epevent(),fd(_fd),Sevent(_Sevent),write(_write),read(_read),attach_epoll(NULL),time_round(_time_round)
+epevent(),fd(_fd),Sevent(_Sevent),write(_write),read(_read),attach_epoll(nullptr),accept_epoll(nullptr),time_round(_time_round)
 {
-    length = 4096;
-    buff = new char[length];
+    max_read_write_buff_length = 4096;
+    read_buff = new char[max_read_write_buff_length];
+    write_buff = new char[max_read_write_buff_length];
+    read_length = 0;
+    write_length = 0;
     epevent.data.fd = _fd;
     epevent.events = Sevent;
 }
@@ -13,11 +16,11 @@ int channel::handle_event()
 {
     if(Revent & EPOLLIN)
     {
-        int flag = read(shared_from_this(),buff,length);
-        if(flag == 1)
-        {
-            cout<<"recv data from client: "<<fd<<" "<<buff<<endl;
-        }
+        HandleRead();
+    }
+    else if(Revent & EPOLLOUT)
+    {
+        HandleWrite();
     }
     Revent = 0;
     return 0;
@@ -39,7 +42,8 @@ channel::~channel()
 {
     close(fd);
     LOG <<"client fd: "<<fd<<" has been closed";
-    delete[] buff;
+    delete[] read_buff;
+    delete[] write_buff;
 }
 
 int channel::get_fd()
@@ -59,6 +63,31 @@ void channel::SeparateTimer()
     if(temp = wp_time_round_item.lock())
     {
         temp->reset();//将绑定到该定时器上的fd分离
+    }
+}
+
+void channel::HandleRead()
+{
+    read_length = read(shared_from_this(),read_buff,max_read_write_buff_length);
+}
+
+void channel::HandleWrite()
+{
+    int wlen = write(shared_from_this(),write_buff,write_length);
+    if(wlen > 0)
+    {
+        if(wlen < write_length)
+        {
+            memcpy(write_buff,write_buff + (write_length - wlen),wlen);
+        }
+        write_length = wlen;
+        epevent.events = EPOLLOUT | EPOLLIN | EPOLLET;
+        attach_epoll->Epoll_Mod(shared_from_this());
+    }
+    else if(wlen == -1)
+    {
+        epevent.events = EPOLLIN | EPOLLET;
+        attach_epoll->Epoll_Mod(shared_from_this());
     }
 }
 
