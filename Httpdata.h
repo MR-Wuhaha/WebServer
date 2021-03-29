@@ -28,9 +28,6 @@ class Httpdata:public channel
         bool Get_KeepAlive_State();
         virtual int handle_event();
         virtual void Add_New_Connect(int);
-        friend int Maccept(SP_channel _channel,char *buff,int length);
-        friend int readn(SP_channel _channel,char *buff,int length);
-        friend int writen(SP_channel _channel,char *buff,int length);
         ~Httpdata();
     private:
         bool Keep_Alive;
