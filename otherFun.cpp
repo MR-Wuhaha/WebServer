@@ -37,6 +37,7 @@ int Maccept(SP_channel _channel,char *buff,int length)
 int readn(SP_channel _channel,char *buff,int length)
 { 
     memset(buff,0,length);
+    int read_len = 0;
     while(length > 0)
     {
         int rlen = recv(_channel->fd,buff,length,0);
@@ -55,6 +56,7 @@ int readn(SP_channel _channel,char *buff,int length)
         {
             length = length - rlen;
             buff = buff + rlen;
+            read_len += rlen;
         }
         else
         {
@@ -65,7 +67,7 @@ int readn(SP_channel _channel,char *buff,int length)
             return 0;
         }
     }
-    return 1;
+    return read_len;
 }
 int writen(SP_channel _channel,char *buff,int length)
 {
@@ -100,7 +102,11 @@ int writen(SP_channel _channel,char *buff,int length)
     //cout<<"send to client:"<<_channel->fd<<" success!"<<endl;
     //delete (char*)_channel->epevent.data.ptr;
     //_channel->epevent.data.ptr = NULL;
-    return 0;
+    if(length == 0)
+    {
+        return -1;
+    }
+    return length;
 }
 int set_noblock(int sockfd)
 {
