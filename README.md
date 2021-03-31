@@ -14,4 +14,7 @@ mkdir build<br>
 cd build/<br>
 cmake ..<br>
 make<br>
-./Mserver<br>
+./Mserver<br><br>
+服务器资源
+---------------
+服务器的资源放在/source/文件夹内，通过服务器地址IP/可以在页面显示/source文件夹内的文件
