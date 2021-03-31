@@ -26,7 +26,7 @@ int main()
     time_round.start();
 
     //写日志对象
-    LogFile log_file("../Log/Server.txt");
+    LogFile log_file("./ServerLog.txt");
     log_file.Start_Log();
     Log::log_file = &log_file;
 
