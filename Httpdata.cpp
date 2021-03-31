@@ -132,6 +132,7 @@ void Httpdata::handle_http(char *buff)
             head += "Content-Type: text/html\r\n";
             head += "Content-Length: " + to_string(body.size()) + "\r\n";
             head += "\r\n";
+            assert(munmap((void*)ptr,4096) == 0);
         }
         else
         {
