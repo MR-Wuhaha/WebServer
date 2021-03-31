@@ -6,7 +6,7 @@ LogFile::LogFile(string filename)
     pthread_mutex_init(&get_Mutex,NULL);
     pthread_cond_init(&get_Cond,NULL);
     pthread_cond_init(&Swap_Cond,NULL);
-    fd = open(filename.c_str(),O_RDWR | O_APPEND);
+    fd = open(filename.c_str(),O_RDWR | O_APPEND | O_CREAT);
     if(fd < 0)
     {
         cout<<"LofFile open fail"<<endl;
