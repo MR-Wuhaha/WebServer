@@ -14,14 +14,18 @@ int Httpdata::handle_event()
         if(accept_epoll == nullptr)
         {
             //cout<<"recv data from client: "<<fd<<" "<<buff<<endl;
-            handle_http(read_buff);
-            SeparateTimer();
-            if(time_round != nullptr && Keep_Alive)
+            //有读取到数据才需要处理
+            if(read_length > 0)
             {
-                std::shared_ptr<TimeRoundItem<channel>> sp_time_round_item(new TimeRoundItem<channel>(5,bind(&Httpdata::Close,shared_from_this().get()),shared_from_this()));
-                wp_time_round_item = std::weak_ptr<TimeRoundItem<channel>>(sp_time_round_item);
-                SP_TimeRoundItemNode<channel>* sp_time_round_item_node = new SP_TimeRoundItemNode<channel>(sp_time_round_item);
-                time_round->AddTimeRoundItemNode(sp_time_round_item_node);
+                handle_http(read_buff);
+                SeparateTimer();
+                if(time_round != nullptr && Keep_Alive)
+                {
+                    std::shared_ptr<TimeRoundItem<channel>> sp_time_round_item(new TimeRoundItem<channel>(5,bind(&Httpdata::Close,shared_from_this().get()),shared_from_this()));
+                    wp_time_round_item = std::weak_ptr<TimeRoundItem<channel>>(sp_time_round_item);
+                    SP_TimeRoundItemNode<channel>* sp_time_round_item_node = new SP_TimeRoundItemNode<channel>(sp_time_round_item);
+                    time_round->AddTimeRoundItemNode(sp_time_round_item_node);
+                }
             }
         }
     }
@@ -68,14 +72,27 @@ void Httpdata::handle_http(char *buff)
         body += "<br><a href=\"https://campus.163.com\">网易招聘</a>";
         body += "<br><a href=\"https://careers.pinduoduo.com\">拼多多招聘</a>";
         body += "<br><a href=\"https://campus.alibaba.com\">阿里巴巴招聘</a>";
-        body += "<br><a href=\"https://campus.bigo.sg\">BIGO招聘</a>";
+        body += "<br><a href=\"https://campus.bigo.sg\">BIGO招聘</a><br>";
+        body += "<font size=\"5\"> MR-Wuhaha's Source Flie List: </font><br/>";
+        DIR* source = opendir("/source");
+        if(source != nullptr)
+        {
+            dirent* p_entry = nullptr;
+            while((p_entry = readdir(source)) != nullptr)
+            {
+                if(!(p_entry->d_type & S_IFDIR) && (strcmp(".", p_entry->d_name) != 0 && strcmp("..", p_entry->d_name) != 0))
+                {
+                    body += "<br><a href=\"/source/" + string(p_entry->d_name) + "\">" + string(p_entry->d_name) + "</a>";
+                }
+            }
+        }
+
         body += "</body></html>";
         head += Recv_Http->_version + " 200 OK\r\n";
         head += "Connection: Keep-Alive\r\n";
         head += "Content-type: text/html\r\n";
         head += "Content-Length: " + to_string(body.size()) + "\r\n";
         head += "\r\n";
-        
     }
     else if(Recv_Http->URI == "/hello")
     {
@@ -91,16 +108,43 @@ void Httpdata::handle_http(char *buff)
     }
     else
     {
-        body += "<html><title>Source Not Found</title>";
-        body += "<body bgcolor=\"ffffff\">";
-        body += "404 NOT_FOUND";
-        body += "<hr><em> MR_Wuhaha's WebServer </em>\n</body></html>";
-        head += Recv_Http->_version + " 404 NOTFOUND\r\n";
-        head += "Connection: Keep-Alive\r\n";
-        head += "Content-Type: text/html\r\n";
-        head += "Content-Length: " + to_string(body.size()) + "\r\n";
-        head += "\r\n";
-
+        string request_file_name = Recv_Http->URI;
+        int request_fd = open(request_file_name.c_str(),O_RDONLY);
+        if(request_fd < 0)
+        {
+            cout<<"openfail"<<endl;
+        }
+        char* ptr = nullptr;
+        if(request_fd > 0 && (ptr = (char*)mmap(NULL,4096,PROT_READ,MAP_SHARED,request_fd,0)) != MAP_FAILED)
+        {
+            body += "<html>";
+            body += "<title>" + Recv_Http->URI.substr(1) +  "</title>";
+            body += "<head>";
+            body += "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
+            body += "</head>";
+            body += "<body bgcolor=\"ffffff\">";
+            body += "MR_Wuhaha's WebServer";
+            body += "<hr><pre style=\"word-wrap: break-word; white-space: pre-wrap; white-space: -moz-pre-wrap\">";
+            body += string(ptr);
+            body += "</pre>\n</body></html>";
+            head += Recv_Http->_version + " 200 OK\r\n";
+            head += "Connection: Keep-Alive\r\n";
+            head += "Content-Type: text/html\r\n";
+            head += "Content-Length: " + to_string(body.size()) + "\r\n";
+            head += "\r\n";
+        }
+        else
+        {
+            body += "<html><title>Source Not Found</title>";
+            body += "<body bgcolor=\"ffffff\">";
+            body += "404 NOT_FOUND";
+            body += "<hr><em> MR_Wuhaha's WebServer </em>\n</body></html>";
+            head += Recv_Http->_version + " 404 NOTFOUND\r\n";
+            head += "Connection: Keep-Alive\r\n";
+            head += "Content-Type: text/html\r\n";
+            head += "Content-Length: " + to_string(body.size()) + "\r\n";
+            head += "\r\n";
+        }
     }
     delete Recv_Http;
     string send_str = head + body;
