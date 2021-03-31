@@ -133,6 +133,7 @@ void Httpdata::handle_http(char *buff)
             head += "Content-Length: " + to_string(body.size()) + "\r\n";
             head += "\r\n";
             assert(munmap((void*)ptr,4096) == 0);
+            close(request_fd);
         }
         else
         {
