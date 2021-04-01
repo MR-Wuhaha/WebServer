@@ -85,6 +85,7 @@ void Httpdata::handle_http(char *buff)
                     body += "<br><a href=\"/source/" + string(p_entry->d_name) + "\">" + string(p_entry->d_name) + "</a>";
                 }
             }
+            closedir(source);
         }
 
         body += "</body></html>";
