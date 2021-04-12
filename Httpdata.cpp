@@ -182,7 +182,9 @@ void Httpdata::handle_request_line(char* buff,int& index,Http_Handle* Recv_Http)
     }
     Recv_Http->_version = temp;
     index = index+2;
+#if LOG_FLAG
     LOG<<Recv_Http->Req+" "+Recv_Http->URI+" "+Recv_Http->_version;
+#endif
     //cout<<Recv_Http->Req<<" "<<Recv_Http->URI<<" "<<Recv_Http->_version<<endl;
 }
 
