@@ -22,14 +22,18 @@ int main()
 
 
     //创建一个时间轮，参数为时间轮的最大定时时间间隔
+    TimeRound<channel> *t = nullptr;
+#if 1
     TimeRound<channel> time_round = TimeRound<channel>(15);
     time_round.start();
-
+    t = &time_round;
+#endif
     //写日志对象
+#if LOG_FLAG
     LogFile log_file("./ServerLog.txt");
     log_file.Start_Log();
     Log::log_file = &log_file;
-
+#endif
 
     EventLoop mepoll_loop(100);//处理请求事件的epoll
     EventLoop *accept_epoll_loop = new EventLoop(100);//创建请求连接的epoll
@@ -54,7 +58,7 @@ int main()
         assert(0);
     }
     listen(lsfd,1000);
-    SP_channel Listen(new Httpdata(lsfd,EPOLLIN | EPOLLET,Maccept,NULL,&time_round));
+    SP_channel Listen(new Httpdata(lsfd,EPOLLIN | EPOLLET,Maccept,NULL,t));
     accept_epoll_loop->m_epoll.Epoll_Add(Listen,true);
     Listen->Set_Accept_Distribute_Epoll(&mepoll_loop.m_epoll);
     pthread_t MainEpollLoop_id;
