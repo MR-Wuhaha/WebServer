@@ -26,7 +26,9 @@ int Maccept(SP_channel _channel,char *buff,int length)
         {
             char client_ip[INET_ADDRSTRLEN];
             inet_ntop(AF_INET,&Client_addr.sin_addr.s_addr,client_ip,sizeof(client_ip));
+#if LOG_FLAG
             LOG<<"accept connect from : " + string(client_ip) + " port:" + to_string(Client_addr.sin_port) << " ClientFd:" << connfd;
+#endif
             //cout<<"accept connect from : "<<client_ip << " port:" << Client_addr.sin_port <<endl;
             assert(set_noblock(connfd));
             _channel->Add_New_Connect(connfd);
@@ -61,7 +63,9 @@ int readn(SP_channel _channel,char *buff,int length)
         else
         {
             //cout<<"client fd: "<<_channel->fd<<" closed or exception happend!"<<endl;
+#if LOG_FLAG
             LOG<<"client fd: "+to_string(_channel->fd) + " closed or exception happend!";
+#endif
             //对端关闭连接或者连接异常断开
             _channel->handle_close();
             return 0;
@@ -93,7 +97,9 @@ int writen(SP_channel _channel,char *buff,int length)
         else
         {
             //cout<<"client fd: "<<_channel->fd<<" closed or exception happend!"<<endl;
+#if LOG_FLAG
             LOG<<"client fd: "+to_string(_channel->fd) + " closed or exception happend!";
+#endif
             //对端关闭连接或者连接异常断开
             _channel->handle_close();
             return 0;
